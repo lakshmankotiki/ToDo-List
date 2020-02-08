@@ -1,36 +1,58 @@
-var express = require('express');
-var bodyParser = require('body-parser');
-var ejs = require('ejs');
-var app = express();
+const express = require('express');
+const bodyParser = require('body-parser');
+const ejs = require('ejs');
+const dateFormat = require(__dirname + '/date');
+const app = express();
 
-var items = [];
+//values which were added by the user will be pushed to these arrays
+const items = ['Go To Gym', 'Write Dialy Journal'];
+const workItems = [];
+
 //telling to the application to use ejs template
 app.set('view engine', 'ejs');
+app.use(express.static('public'));
 app.use(bodyParser.urlencoded({ extended: true }));
 
 //home route
 app.get('/', function(req, res) {
-    var options = {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    };
-    var language = process.LANG;
-    var currDate = new Date();
-    var today = currDate.toLocaleDateString(language, options);
-    console.log("today:", today);
-    res.render('index', { day: today, newToDoItem: items });
+
+    //getting the current date format from custom module
+    const today = dateFormat();
+    console.log("today is: ", today);
+    res.render('index', { listTitle: today, newToDoItem: items, buttonValue: 'home' });
 });
 
 app.post('/', function(req, res) {
-    var item = req.body.todoItem;
-    items.push(item);
-    // res.render('index', { newToDoItem: item });
-    res.redirect('/');
+    const item = req.body.todoItem;
+    console.log("work", req.body);
+    console.log("buttonvalue: ", req.body.button);
+
+    //pushing and redirecting depending on the button values
+    if(req.body.button == "home") {
+        items.push(item);
+        res.redirect('/');
+    } else {
+        workItems.push(item);
+        res.redirect('/work');
+    }
 });
 
-var port = 3000;
+app.get('/work', function(req,res) {
+    res.render('index', { listTitle: 'Work ToDo List', newToDoItem: workItems, buttonValue: 'workList'});
+});
+
+app.post('/work', function(req,res) {
+    console.log("work body", req.body.todoItem);
+    const item = req.body.todoItem;
+    workItems.push(item);
+    res.redirect('/work');
+});
+
+app.get('/about', function(req,res) {
+    res.render('about');
+})
+
+const port = 3000;
 app.listen(port, function() {
     console.log(`application running on port: ${port}`);
 });

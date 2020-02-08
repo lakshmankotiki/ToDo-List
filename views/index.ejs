@@ -1,31 +1,27 @@
-<!DOCTYPE html>
-<html lang="en">
+<!-- Using Layouts in ejs to avoid use of the same code -->
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>ToDo List</title>
-</head>
+<!-- importing header file using include keyword -->
+<%- include('header') -%>
 
-<body>
-    <h1 style="text-align: center;"><u>ToDo List</u></h1>
-
-    <h2><span style="color: red;"> Today is:</span>
-        <%= day %>
-    </h2>
-
-    <ul>
-        <% for(var i=0; i < newToDoItem.length;i++) { %>
-            <li>
-                <%= newToDoItem[i] %>
-            </li>
+    <!-- for heading -->
+    <div class="box" id="heading">
+        <!-- this is how we get dynamic values in ejs from server using <% %> -->
+        <h1><%= listTitle %></h1>
+    </div>
+    
+    <div class="box">
+            <% for(var i=0; i < newToDoItem.length;i++) { %>
+                <div class="item">
+                    <input type="checkbox">
+                    <p><%= newToDoItem[i] %></p>
+            </div>
             <% } %>
-    </ul>
-    <form action="/" , method="POST">
-        <input type="text" name="todoItem">
-        <button type="submit">Add</button>
-    </form>
-</body>
 
-</html>
+            <form class="item" action="/" method="POST">
+                <input type="text" name="todoItem" placeholder="Add New Item Here...">
+                <button type="submit" name="button" value="<%= buttonValue %>">+</button>
+            </form>
+    </div>
+
+<!-- importing footer file using include keyword -->
+<%- include('footer') -%>
