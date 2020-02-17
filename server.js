@@ -9,14 +9,15 @@ const app = express();
 //mongodb connection
 mongoose.connect("mongodb://localhost:27017/ToDoListDB", {
     useNewUrlParser: true,
-    useUnifiedTopology: true
+    useUnifiedTopology: true,
+    useFindAndModify: false
 });
 var db = mongoose.connection;
 db.on('error', function(error) {
     console.log("connection error");
 });
 db.on('open', function() {
-    console.log('successfully connected...!')
+    console.log('successfully connected...!');
 });
 
 //creating schemas
@@ -24,29 +25,25 @@ const itemsSchema = {
     name: String
 };
 
+const customListSchema = {
+    name: String,
+    items: [itemsSchema]
+};
+
 const Item = mongoose.model('Item', itemsSchema);
+const List = mongoose.model('Lists', customListSchema);
 
+//creating default todo items
 const item1 = new Item({
-    name: 'Go To Gym'
+    name: 'Welcome to your todolist!'
 });
-
 const item2 = new Item({
-    name: 'Write Daily Jornal'
+    name: 'Hit the + button to add new item'
 });
-
 const item3 = new Item({
-    name: 'Eat Healthy Food'
+    name: '<-- Hit this to delete an item'
 });
-
-const items = [item1, item2, item3];
-
-Item.insertMany(items, function(err, items) {
-    if(err) {
-        console.log("Issue in inserting documents into an todo collection")
-    } else {
-        console.log("successfully inserted items");
-    }
-});
+const defaultItems = [item1, item2, item3];
 
 //telling to the application to use ejs template
 app.set('view engine', 'ejs');
@@ -56,60 +53,102 @@ app.use(bodyParser.urlencoded({ extended: true }));
 //home route
 app.get('/', function(req, res) {
 
-    var finalItems = [];
-    //getting the current date format from custom module
-    const today = dateFormat();
-    console.log("today is: ", today);
-
-    Item.find(function(err, items) {
-        if(err) {
+    Item.find(function(err, foundItems) {
+        if (err) {
             console.log("Issue in getting todo listitems");
         } else {
-            items.forEach(function(item) {
-                finalItems.push(item.name);
-            })
-            console.log("items are: ", finalItems);
-            res.render('index', { listTitle: today, newToDoItem: finalItems, buttonValue: 'home' });
+            //adding default items when collection is empty
+            if (foundItems.length === 0) {
+                Item.insertMany(defaultItems, function(err, items) {
+                    if (err) {
+                        console.log("Issue in inserting documents into an todo collection")
+                    } else {
+                        console.log("successfully inserted items");
+                    }
+                });
+                res.redirect('/');
+            } else {
+                // console.log("foundItems are: ", foundItems);
+                res.render('index', { listTitle: "Today", newToDoItem: foundItems });
+            }
         }
-    })
+    });
+});
+
+app.get('/:customListName', function(req, res) {
+    debugger;
+    var customListName = req.params.customListName;
+    List.findOne({ name: customListName }, function(err, foundList) {
+        if (!err) {
+            if (!foundList) {
+                //create new list
+                var createCustomList = new List({
+                    name: customListName,
+                    items: defaultItems
+                });
+                createCustomList.save();
+                res.redirect('/' + customListName);
+            } else {
+                //show existed list
+                console.log("exists:", foundList);
+                res.render('list', { listTitle: customListName, newToDoItem: foundList.items });
+            }
+        }
+    });
 });
 
 app.post('/', function(req, res) {
+    debugger;
     const itemName = req.body.todoItem;
-    console.log("work", req.body);
-    console.log("buttonvalue: ", req.body.button);
+    const listTitle = req.body.listTitle;
 
-    //pushing and redirecting depending on the button values
-    if(req.body.button == "home") {
-        // items.push(item);
-        Item.save(itemName, function(err, item) {
-            if(err) {
-                console.log("Issue in creating toDo. Please contact developer...!");
-            } else {
-                console.log('Todo inserted successfully');
-            }
-        })
+    var createItem = new Item({
+        name: itemName
+    });
+    if (listTitle === "Today") {
+        createItem.save();
         res.redirect('/');
     } else {
-        workItems.push(item);
-        res.redirect('/work');
-    }
+        List.findOne({ name: listTitle }, function(err, foundItems) {
+            if (!err) {
+                if (foundItems) {
+                    foundItems.items.push(createItem);
+                    foundItems.save();
+                    res.redirect('/' + listTitle);
+                }
+            }
+        });
+    };
 });
 
-app.get('/work', function(req,res) {
-    res.render('index', { listTitle: 'Work ToDo List', newToDoItem: workItems, buttonValue: 'workList'});
+app.post('/delete', function(req, res) {
+    const checkedItem = req.body.checkboxValue;
+    // console.log("man:", req.body.checkboxValue);
+    Item.findByIdAndRemove(checkedItem, function(err, item) {
+        if (err) {
+            console.log("Issue in deleting completed todo Item");
+        } else {
+            console.log('Your completed todo deleted successfully!');
+            res.redirect('/')
+        }
+    })
+
+})
+
+app.get('/work', function(req, res) {
+    res.render('index', { listTitle: 'Work ToDo List', newToDoItem: workItems, buttonValue: 'workList' });
 });
 
-app.post('/work', function(req,res) {
+app.post('/work', function(req, res) {
     console.log("work body", req.body.todoItem);
     const item = req.body.todoItem;
     workItems.push(item);
     res.redirect('/work');
 });
 
-app.get('/about', function(req,res) {
+app.get('/about', function(req, res) {
     res.render('about');
-})
+});
 
 const port = 3000;
 app.listen(port, function() {
