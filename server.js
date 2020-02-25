@@ -95,7 +95,6 @@ app.get('/:customListName', function(req, res) {
                 res.redirect('/' + customListName);
             } else {
                 //show existed list
-                console.log("exists:", foundList);
                 res.render('list', { listTitle: customListName, newToDoItem: foundList.items });
             }
         }
@@ -130,8 +129,9 @@ app.post('/', function(req, res) {
 });
 
 app.post('/delete', function(req, res) {
+    debugger;
     const checkedItem = req.body.checkboxValue;
-    const listItemName = req.body.listItemName;
+    const listItemName = req.body.listTitle;
     //delete the todo item based on list title either its a home or custom list
     if(listItemName === "Today") {
         Item.findByIdAndRemove(checkedItem, function(err, item) {

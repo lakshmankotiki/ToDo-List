@@ -4,7 +4,7 @@
 3. Work type of ToDo List
 
 # Technologies Used
-JavaScript, NodeJS, ExpressJS, EJS, HTML5 and CSS3
+JavaScript, NodeJS, ExpressJS, EJS, Mongoose, lodash, HTML5 and CSS3
 
 # Clone this Project
 - Clone this repository
@@ -24,4 +24,7 @@ node server.js
 application is running on (https://localhost:3000)
 # To-Do Types
 1. Create your personnel todos in (https://localhost:3000)
-2. Create your Work related todos using (https://localhost:3000/work)
+    - Given 4 default todo list items which shows the procedure
+    - We are giving a flexibility to store your todos in mongodb database
+2. And create you custom todo list using (https://localhost:3000/:customToDoListName)
+    - you're free to create how many custom todos you want

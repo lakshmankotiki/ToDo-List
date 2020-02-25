@@ -20,6 +20,8 @@
                         <%= newToDoItem.name %>
                     </p>
                 </div>
+                <!-- hidden field gives the flexibility to inlcude data that cannot be seen when submitting the form -->
+                <input type="hidden" name="listTitle" value="<%= listTitle %>">
             </form>
         <% }); %>
         <form class="item" action="/" method="POST">
