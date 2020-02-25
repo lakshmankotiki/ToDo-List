@@ -1,8 +1,8 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
+const _ = require('lodash');
 const ejs = require('ejs');
-const dateFormat = require(__dirname + '/date');
 const app = express();
 
 
@@ -27,13 +27,14 @@ const itemsSchema = {
 
 const customListSchema = {
     name: String,
+    //getting items from items schema to custom list schema
     items: [itemsSchema]
 };
 
 const Item = mongoose.model('Item', itemsSchema);
 const List = mongoose.model('Lists', customListSchema);
 
-//creating default todo items
+//creating default todo items for home and custom list
 const item1 = new Item({
     name: 'Welcome to your todolist!'
 });
@@ -43,7 +44,10 @@ const item2 = new Item({
 const item3 = new Item({
     name: '<-- Hit this to delete an item'
 });
-const defaultItems = [item1, item2, item3];
+const item4 = new Item({
+    name: 'Go to gym.'
+});
+const defaultItems = [item1, item2, item3, item4];
 
 //telling to the application to use ejs template
 app.set('view engine', 'ejs');
@@ -57,7 +61,7 @@ app.get('/', function(req, res) {
         if (err) {
             console.log("Issue in getting todo listitems");
         } else {
-            //adding default items when collection is empty
+            //adding default todo items when items collection is empty
             if (foundItems.length === 0) {
                 Item.insertMany(defaultItems, function(err, items) {
                     if (err) {
@@ -68,18 +72,19 @@ app.get('/', function(req, res) {
                 });
                 res.redirect('/');
             } else {
-                // console.log("foundItems are: ", foundItems);
                 res.render('index', { listTitle: "Today", newToDoItem: foundItems });
             }
         }
     });
 });
 
+//creating custom list collection whatever the user wants
 app.get('/:customListName', function(req, res) {
-    debugger;
-    var customListName = req.params.customListName;
+    //using lodash function to capitilize the first letter to avoid duplicates
+    var customListName = _.capitalize(req.params.customListName);
     List.findOne({ name: customListName }, function(err, foundList) {
         if (!err) {
+            //if list is not found then only create the new one
             if (!foundList) {
                 //create new list
                 var createCustomList = new List({
@@ -97,23 +102,26 @@ app.get('/:customListName', function(req, res) {
     });
 });
 
+//adding items to the todo list based on list title name
 app.post('/', function(req, res) {
-    debugger;
     const itemName = req.body.todoItem;
     const listTitle = req.body.listTitle;
 
     var createItem = new Item({
         name: itemName
     });
+    //if list title is today then it's an home route
     if (listTitle === "Today") {
         createItem.save();
         res.redirect('/');
     } else {
         List.findOne({ name: listTitle }, function(err, foundItems) {
             if (!err) {
+                //if existed list is found then push new todo item and save
                 if (foundItems) {
                     foundItems.items.push(createItem);
                     foundItems.save();
+                    //redirects to custom list page
                     res.redirect('/' + listTitle);
                 }
             }
@@ -123,27 +131,30 @@ app.post('/', function(req, res) {
 
 app.post('/delete', function(req, res) {
     const checkedItem = req.body.checkboxValue;
-    // console.log("man:", req.body.checkboxValue);
-    Item.findByIdAndRemove(checkedItem, function(err, item) {
-        if (err) {
-            console.log("Issue in deleting completed todo Item");
-        } else {
-            console.log('Your completed todo deleted successfully!');
-            res.redirect('/')
-        }
-    })
+    const listItemName = req.body.listItemName;
+    //delete the todo item based on list title either its a home or custom list
+    if(listItemName === "Today") {
+        Item.findByIdAndRemove(checkedItem, function(err, item) {
+            if (err) {
+                console.log("Issue in deleting completed todo Item");
+            } else {
+                console.log('Your completed todo deleted successfully!');
+                res.redirect('/')
+            }
+        });
+    } else {
+        //if it's a list cllection then loop through the array of items using pull op
+        List.findOneAndUpdate(
+            {name: listItemName},
+            {$pull: {items: {_id: checkedItem}}}, function(err, foundItem) {
+                if(!err) {
+                    console.log("item deleted succssfully");
+                    res.redirect('/' + listItemName);
+                }
+            }
+        );
+    }
 
-})
-
-app.get('/work', function(req, res) {
-    res.render('index', { listTitle: 'Work ToDo List', newToDoItem: workItems, buttonValue: 'workList' });
-});
-
-app.post('/work', function(req, res) {
-    console.log("work body", req.body.todoItem);
-    const item = req.body.todoItem;
-    workItems.push(item);
-    res.redirect('/work');
 });
 
 app.get('/about', function(req, res) {

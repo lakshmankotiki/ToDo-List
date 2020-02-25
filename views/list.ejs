@@ -20,13 +20,14 @@
                         <%= newToDoItem.name %>
                     </p>
                 </div>
+                <input type="hidden" name="listItemName" value="<%= listTitle %>">
             </form>
-            <% }); %>
-                <form class="item" action="/" method="POST">
-                    <input type="text" name="todoItem" placeholder="Add New Item Here...">
-                    <button type="submit" name="listTitle" value="<%= listTitle %>">+</button>
-                </form>
+        <% }); %>
+        <form class="item" action="/" method="POST">
+            <input type="text" name="todoItem" placeholder="Add New Item Here...">
+            <button type="submit" name="listTitle" value="<%= listTitle %>">+</button>
+        </form>
     </div>
 
-    <!-- importing footer file using include keyword -->
-    <%- include('footer') -%>
+<!-- importing footer file using include keyword -->
+<%- include('footer') -%>
