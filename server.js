@@ -7,7 +7,7 @@ const app = express();
 
 
 //mongodb connection
-mongoose.connect("mongodb://localhost:27017/ToDoListDB", {
+mongoose.connect("mongodb+srv://admin-lakshman:Test123@cluster0-wlysr.mongodb.net/ToDoListDB", {
     useNewUrlParser: true,
     useUnifiedTopology: true,
     useFindAndModify: false
@@ -139,7 +139,7 @@ app.post('/delete', function(req, res) {
                 console.log("Issue in deleting completed todo Item");
             } else {
                 console.log('Your completed todo deleted successfully!');
-                res.redirect('/')
+                res.redirect('/');
             }
         });
     } else {
@@ -161,7 +161,11 @@ app.get('/about', function(req, res) {
     res.render('about');
 });
 
-const port = 3000;
+//environment variables, because our application must listen on the specific port
+let port = process.env.PORT;
+if (port == null || port == "") {
+  port = 3000;
+}
 app.listen(port, function() {
     console.log(`application running on port: ${port}`);
 });
